@@ -7,46 +7,79 @@
 
 struct ConnectedFour {
     var board: Board<CFSlot>
+    // Make GameState conform to Equatable
+    enum GameState: Equatable {
+        case playing
+        case won(CFSlot)
+        case draw
+    }
+    
+    var turn : CFSlot = .red
+    var state: GameState = .playing
+    private var moveCount = 0
+    
     
     init() {
         self.board = Board.createEmpty(width: 7, height: 6, defaultElement: .empty)
     }
     
-    mutating func drop(at column: Int, piece: CFSlot) throws -> (row: Int, col: Int) {
+    mutating func drop(at column: Int) throws -> (row: Int, col: Int) {
+        guard state == .playing else {
+            throw GameError.gameIsOver
+        }
         guard column >= 0 && column < board.width else {
             throw GameError.invalidColumn
         }
-        var current = board.height - 1
-        while board[current, column] != .empty {
-            if current == 0 {
+        
+        var row = board.height - 1
+        while board[row, column] != .empty {
+            if row == 0 {
                 throw GameError.columnFull
             }
-            current -= 1
+            row -= 1
         }
-        board[current, column] = piece
-        return (current, column)
+        board[row, column] = turn
+        moveCount += 1
+        
+        if try checkWinner(forRow: row, col: column) {
+            state = .won(turn)
+        } else {
+            if moveCount == 42 {
+                state = .draw
+            } else {
+                turn = turn == .red ? .black : .red
+            }
+        }
+        
+        return (row, column)
     }
     
-    public func checkWinner(forRow row: Int, col: Int, piece: CFSlot) throws -> Bool {
+    mutating func reset() {
+        self.board = Board.createEmpty(width: 7, height: 6, defaultElement: .empty)
+        self.turn = .red
+        self.state = .playing
+        self.moveCount = 0
+    }
+    
+    private mutating func checkWinner(forRow row: Int, col: Int) throws -> Bool {
         guard row >= 0, row < board.height, col >= 0, col < board.width else {
             throw GameError.invalidPosition
         }
-        guard board[row, col] == piece else {
+        guard board[row, col] == turn else {
             return false
         }
-        let isWinner = countMatches(startingFrom: row, col: col, dRow: -1, dCol: 0, piece: piece) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: 0, piece: piece) + 1 >= 4 ||
-        countMatches(startingFrom: row, col: col, dRow: 0, dCol: -1, piece: piece) + countMatches(startingFrom: row, col: col, dRow: 0, dCol: 1, piece: piece) + 1 >= 4 ||
-        countMatches(startingFrom: row, col: col, dRow: -1, dCol: 1, piece: piece) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: -1, piece: piece) + 1 >= 4 ||
-        countMatches(startingFrom: row, col: col, dRow: -1, dCol: -1, piece: piece) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: 1, piece: piece) + 1 >= 4
-        return isWinner
+        return countMatches(startingFrom: row, col: col, dRow: -1, dCol: 0) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: 0) + 1 >= 4 ||
+        countMatches(startingFrom: row, col: col, dRow: 0, dCol: -1) + countMatches(startingFrom: row, col: col, dRow: 0, dCol: 1) + 1 >= 4 ||
+        countMatches(startingFrom: row, col: col, dRow: -1, dCol: 1) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: -1) + 1 >= 4 ||
+        countMatches(startingFrom: row, col: col, dRow: -1, dCol: -1) + countMatches(startingFrom: row, col: col, dRow: 1, dCol: 1) + 1 >= 4
     }
     
-    private func countMatches(startingFrom row: Int, col: Int, dRow: Int, dCol: Int, piece: CFSlot) -> Int {
+    private func countMatches(startingFrom row: Int, col: Int, dRow: Int, dCol: Int) -> Int {
         let nextRow = row + dRow
         let nextColumn = col + dCol
-        guard nextRow >= 0, nextRow < board.height, nextColumn >= 0, nextColumn < board.width, board[nextRow, nextColumn] == piece else {
+        guard nextRow >= 0, nextRow < board.height, nextColumn >= 0, nextColumn < board.width, board[nextRow, nextColumn] == turn else {
             return 0
         }
-        return 1 + countMatches(startingFrom: nextRow, col: nextColumn, dRow: dRow, dCol: dCol, piece: piece)
+        return 1 + countMatches(startingFrom: nextRow, col: nextColumn, dRow: dRow, dCol: dCol)
     }
 }
