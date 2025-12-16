@@ -4,9 +4,10 @@
 //
 //  Created by Roger Navarro Claros on 12/12/25.
 //
+import Foundation
 
-enum CFSlot {
-    case red
-    case black
-    case empty
+enum CFSlot: String {
+    case red = "Red"
+    case black = "Black"
+    case empty = ""
 }

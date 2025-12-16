@@ -63,7 +63,7 @@ struct ConnectedFour {
     
     private mutating func checkWinner(forRow row: Int, col: Int) throws -> Bool {
         guard row >= 0, row < board.height, col >= 0, col < board.width else {
-            throw GameError.invalidPosition
+            throw GameError.invalidMove
         }
         guard board[row, col] == turn else {
             return false
