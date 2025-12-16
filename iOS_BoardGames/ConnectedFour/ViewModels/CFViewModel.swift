@@ -20,12 +20,13 @@ public class CFViewModel {
     
     func makeMove(at column: Int) {
         do {
+            errorMessage = ""
             let _ = try game.drop(at: column)
             switch game.state {
             case .playing:
-                status = "Player \(game.turn.rawValue) plays next"
+                status = "Player \(game.turn.localizedName) plays next"
             case .won(let winner):
-                status = "Player \(winner.rawValue) wins!"
+                status = String(localized: "Player \(winner.localizedName) wins!")
             case .draw:
                 status = "It's a draw!"
             }
@@ -46,6 +47,8 @@ public class CFViewModel {
     }
     
     func reset() {
+        status = "Tap on a column to start a new game"
+        errorMessage = ""
         game.reset()
     }
 }
